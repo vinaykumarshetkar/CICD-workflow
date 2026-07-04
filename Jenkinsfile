@@ -9,8 +9,8 @@ pipeline {
         ANSIBLE_HOST_KEY_CHECKING = 'False'
         JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64"
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
-        AZ_SUBSCRIPTION = '8c841f79-6c82-4290-9d85-3c74f5513d78'
-        AZ_TENANT       = 'a76789c5-125b-4cbc-8b50-d6bd349423d3'
+        AZ_SUBSCRIPTION_ID = '8c841f79-6c82-4290-9d85-3c74f5513d78'
+        AZ_TENANT_ID       = 'a76789c5-125b-4cbc-8b50-d6bd349423d3'
     }
 
     stages {
