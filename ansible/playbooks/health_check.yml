@@ -1,0 +1,25 @@
+---
+- name: Health check
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Verify application is running
+      shell: ss -tulnp | grep 8080
+      register: app_status
+    - debug:
+        var: app_status.stdout
+    - name: Health Check
+      uri:
+        url: http://{{ inventory_hostname }}:8080/sayhi
+        method: GET
+        status_code: 200
+        return_content: yes
+      register: health_check
+      retries: 10
+      delay: 5
+      until: health_check.status == 200
+    - name: Display Health Check Response
+      debug:
+        msg: "{{ health_check.content }}"
+
