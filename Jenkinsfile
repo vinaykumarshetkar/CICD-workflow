@@ -9,6 +9,8 @@ pipeline {
         ANSIBLE_HOST_KEY_CHECKING = 'False'
         JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64"
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
+        AZ_SUBSCRIPTION = '8c841f79-6c82-4290-9d85-3c74f5513d78'
+        AZ_TENANT       = 'a76789c5-125b-4cbc-8b50-d6bd349423d3'
     }
 
     stages {
@@ -51,16 +53,49 @@ pipeline {
                 """
             }
         }
-                stage('Provision Infrastructure') {
-            steps {
-                echo 'Provisioning Azure Infrastructure...'
+stages {
 
-                dir("${TERRAFORM_DIR}") {
+        stage('Azure Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'azure-sp',
+                        usernameVariable: 'AZ_CLIENT_ID',
+                        passwordVariable: 'AZ_CLIENT_SECRET'
+                    )
+                ]) {
                     sh '''
-                        set -e
-                        terraform init
-                        terraform apply -auto-approve 
+                        az login --service-principal \
+                          -u "$AZ_CLIENT_ID" \
+                          -p "$AZ_CLIENT_SECRET" \
+                          --tenant "$AZ_TENANT_ID"
+
+                        az account set --subscription "$AZ_SUBSCRIPTION_ID"
                     '''
+                }
+            }
+        }
+
+        stage('Provision Infrastructure') {
+            steps {
+                dir("${TERRAFORM_DIR}") {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'azure-sp',
+                            usernameVariable: 'ARM_CLIENT_ID',
+                            passwordVariable: 'ARM_CLIENT_SECRET'
+                        )
+                    ]) {
+                        sh '''
+                            export ARM_CLIENT_ID=$ARM_CLIENT_ID
+                            export ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET
+                            export ARM_TENANT_ID=$AZ_TENANT_ID
+                            export ARM_SUBSCRIPTION_ID=$AZ_SUBSCRIPTION_ID
+
+                            terraform init
+                            terraform apply -auto-approve
+                        '''
+                    }
                 }
             }
         }
@@ -104,4 +139,5 @@ pipeline {
             cleanWs()
         }
     }
+}
 }
