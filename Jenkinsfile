@@ -51,6 +51,19 @@ pipeline {
                 """
             }
         }
+                stage('Provision Infrastructure') {
+            steps {
+                echo 'Provisioning Azure Infrastructure...'
+
+                dir("${TERRAFORM_DIR}") {
+                    sh '''
+                        set -e
+                        terraform init
+                        terraform apply -auto-approve 
+                    '''
+                }
+            }
+        }
 
         stage('Deploy Application') {
             steps {
