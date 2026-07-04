@@ -6,6 +6,7 @@ pipeline {
         TERRAFORM_DIR = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/terraform"
         ANSIBLE_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/ansible/playbooks"
         BACKUP_DIR    = "/opt/task_backup"
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
     }
 
     stages {
@@ -43,7 +44,8 @@ pipeline {
             steps {
                 sh """
                     cp ${PROJECT_DIR}/target/devops-demo-0.3.0.jar ${BACKUP_DIR}/
-                    ${BACKUP_DIR}/backup.sh
+                    cd ${BACKUP_DIR}
+                    bash backup.sh
                 """
             }
         }
@@ -51,6 +53,7 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 dir("${ANSIBLE_DIR}") {
+                    sshagent(credentials: ['newKey']) {
                     sh '''
                         ansible-playbook -i inventory.ini deploy.yml
                     '''
@@ -61,6 +64,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 dir("${ANSIBLE_DIR}") {
+                    sshagent(credentials: ['newKey']) {
                     sh '''
                         ansible-playbook -i inventory.ini healthcheck.yml
                     '''
