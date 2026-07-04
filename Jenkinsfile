@@ -7,6 +7,8 @@ pipeline {
         ANSIBLE_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/ansible/playbooks"
         BACKUP_DIR    = "/opt/task_backup"
         ANSIBLE_HOST_KEY_CHECKING = 'False'
+        JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64"
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -60,17 +62,19 @@ pipeline {
                 }
             }
         }
+        }
 
         stage('Health Check') {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     sshagent(credentials: ['newKey']) {
                     sh '''
-                        ansible-playbook -i inventory.ini healthcheck.yml
+                        ansible-playbook -i inventory.ini health_check.yml
                     '''
                 }
             }
         }
+    }
     }
 
     post {
