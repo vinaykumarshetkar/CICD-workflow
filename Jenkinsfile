@@ -53,8 +53,6 @@ pipeline {
                 """
             }
         }
-stages {
-
         stage('Azure Login') {
             steps {
                 withCredentials([
@@ -139,5 +137,4 @@ stages {
             cleanWs()
         }
     }
-}
 }
