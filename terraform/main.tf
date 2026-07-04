@@ -122,3 +122,12 @@ output "public_ip" {
 output "private_ip" {
   value = azurerm_network_interface.taskNIC.private_ip_address
 }
+
+resource "local_file" "ansible_inventory" {
+  filename = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/ansible/playbooks/inventory.ini"
+
+  content = <<EOF
+[VM]
+VM4 ansible_host=${azurerm_public_ip.taskPIP.ip_address} ansible_user=azureuser ansible_private_key_file=/home/azureuser/.ssh/newKey.pem
+EOF
+}
