@@ -1,113 +1,91 @@
 pipeline {
-
     agent any
 
-    tools {
-        maven 'Maven-3.6.0'
-        jdk 'jdk1.8.0'
+    options {
+        timestamps()
+        ansiColor('xterm')
+    }
+
+    environment {
+        PROJECT_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure"
+        TERRAFORM_DIR = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/terraform"
+        ANSIBLE_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/ansible/playbooks"
+        BACKUP_DIR    = "/opt/task_backup"
     }
 
     stages {
 
+        stage('Clone Repository') {
+            steps {
+                git branch: 'candidate/vinay',
+                    url: 'https://github.com/vinaykumarshetkar/CICD-workflow.git'
+            }
+        }
+
         stage('Build') {
             steps {
-                checkout scm
-                withEnv(["PATH+MAVEN=${tool 'Maven-3.6.0'}/bin"]) {
-                    sh "/Applications/cia/apache-maven-3.6.0/bin/mvn -X clean compile"
+                dir("${PROJECT_DIR}") {
+                    sh '''
+                        set -e
+                        mvn clean install
+                    '''
                 }
             }
         }
 
         stage('Test') {
             steps {
-                echo("Perform Unit Test")
-                withEnv(["PATH+MAVEN=${tool 'Maven-3.6.0'}/bin"]) {
-                    sh "/Applications/cia/apache-maven-3.6.0/bin/mvn -X clean test"
-                }
-
-                junit('**/target/surefire-reports/TEST-*.xml')
-
-
-                echo("Perform Integration Test")
-
-                echo("SonarQube Integration")
-                sh '/Applications/cia/apache-maven-3.6.0/bin/mvn clean package sonar:sonar'
-
-                echo("IBM AppScan for CVE Check")
-            }
-        }
-
-
-        stage('Package') {
-            steps {
-                withEnv(["PATH+MAVEN=${tool 'Maven-3.6.0'}/bin"]) {
-                    sh "/Applications/cia/apache-maven-3.6.0/bin/mvn -X clean deploy"
-                }
-
-            }
-        }
-
-        stage('Provision') {
-            steps {
-                echo("Provisioning VM on Azure")
-                dir("/Users/Shared/Jenkins/Home/workspace/ansible_master/terraform") {
+                dir("${PROJECT_DIR}") {
                     sh '''
-                            export PATH=$PATH:/usr/local/bin
-                            touch output
-                            terraform init
-                            az login -u kalis2050@yahoo.co.in -p Dakshin893$
-                            terraform plan -out=output
-                            terraform apply -auto-approve
-                            terraform output -json public_ip_address | jq '.value' > /Users/Shared/Jenkins/Home/workspace/ansible_master/ansible/environments/test/hosts
-                     '''
-                }
-            }
-        }
-
-
-        stage('Deploy') {
-            steps {
-                echo("Deploying Application using Ansible Playbook")
-                withEnv(["PATH+ANSIBLE=${tool 'ansible'}/bin"]) {
-                    sh '''
-                                  export ANSIBLE=/usr/local/Cellar/ansible/2.7.5
-                                  export PATH=$PATH:$ANSIBLE/bin:/usr/local/bin
-                                  export ANSIBLE_HOST_KEY_CHECKING=False
-                                  echo "ANSIBLE = ${ANSIBLE}"
-                                  sshpass -p Password1234! ansible-playbook /Users/Shared/Jenkins/Home/workspace/ansible_master/ansible/playbooks/deploy.yml -i /Users/Shared/Jenkins/Home/workspace/ansible_master/ansible/environments/test/hosts -s -U root -u testadmin -k                
+                        set -e
+                        mvn test
                     '''
                 }
             }
         }
 
-        stage('Load Test') {
+        stage('Archive Artifact') {
             steps {
-                build job: 'JMeter - Freestyle'
+                sh """
+                    cp ${PROJECT_DIR}/target/devops-demo-0.3.0.jar ${BACKUP_DIR}/
+                    ${BACKUP_DIR}/backup.sh
+                """
             }
         }
 
-        stage('Delete VM?') {
+        stage('Deploy Application') {
             steps {
-                script {
-                    def userInput = input(id: 'confirm', message: 'Deploy new build?', parameters: [[$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Deploy', name: 'confirm']])
+                dir("${ANSIBLE_DIR}") {
+                    sh '''
+                        ansible-playbook -i inventory.ini deploy.yml
+                    '''
                 }
             }
         }
 
-        stage('Delete VM') {
+        stage('Health Check') {
             steps {
-                echo("Provisioning VM on Azure")
-                dir("/Users/Shared/Jenkins/Home/workspace/ansible_master/terraform") {
+                dir("${ANSIBLE_DIR}") {
                     sh '''
-                            export PATH=$PATH:/usr/local/bin
-                            az login -u kalis2050@yahoo.co.in -p Dakshin893$
-                            terraform destroy -auto-approve
-                            '''
+                        ansible-playbook -i inventory.ini healthcheck.yml
+                    '''
                 }
             }
         }
     }
+
+    post {
+
+        success {
+            echo "Pipeline executed successfully."
+        }
+
+        failure {
+            echo "Pipeline failed. Check the console logs."
+        }
+
+        always {
+            cleanWs()
+        }
+    }
 }
-
-
-
