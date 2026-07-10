@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure"
-        TERRAFORM_DIR = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/terraform"
-        ANSIBLE_DIR   = "/home/azureuser/task/CICD_Ansible_Terraform_Azure/ansible/playbooks"
+    PROJECT_DIR   = "${WORKSPACE}"
+    TERRAFORM_DIR = "${WORKSPACE}/terraform"
+    ANSIBLE_DIR   = "${WORKSPACE}/ansible/playbooks"
         BACKUP_DIR    = "/opt/task_backup"
         ANSIBLE_HOST_KEY_CHECKING = 'False'
         JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64"
