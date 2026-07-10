@@ -9,8 +9,6 @@ pipeline {
         ANSIBLE_HOST_KEY_CHECKING = 'False'
         JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64"
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
-        AZ_SUBSCRIPTION_ID = '8c841f79-6c82-4290-9d85-3c74f5513d78'
-        AZ_TENANT_ID       = 'a76789c5-125b-4cbc-8b50-d6bd349423d3'
     }
 
     stages {
@@ -27,7 +25,7 @@ pipeline {
                 dir("${PROJECT_DIR}") {
                     sh '''
                         set -e
-                        mvn clean install
+                        mvn clean install -B
                     '''
                 }
             }
@@ -42,28 +40,30 @@ pipeline {
                 '''
             }
         }
-        stage('Azure Login') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'azure-sp',
-                        usernameVariable: 'AZ_CLIENT_ID',
-                        passwordVariable: 'AZ_CLIENT_SECRET'
-                    )
-                ]) {
-                    sh '''
-                        echo $AZ_TENANT_ID
-                        echo $AZ_SUBSCRIPTION_ID
-                        az login --service-principal \
-                          -u "$AZ_CLIENT_ID" \
-                          -p "$AZ_CLIENT_SECRET" \
-                          --tenant "$AZ_TENANT_ID"
+stage('Azure Login') {
+    steps {
+        withCredentials([
+            azureServicePrincipal(
+                credentialsId: 'vinay-azure-sp',
+                subscriptionIdVariable: 'AZ_SUBSCRIPTION_ID',
+                clientIdVariable: 'AZ_CLIENT_ID',
+                clientSecretVariable: 'AZ_CLIENT_SECRET',
+                tenantIdVariable: 'AZ_TENANT_ID'
+            )
+        ]) {
+            sh '''
+                az login --service-principal \
+                  --username "$AZ_CLIENT_ID" \
+                  --password "$AZ_CLIENT_SECRET" \
+                  --tenant "$AZ_TENANT_ID"
 
-                        az account set --subscription "$AZ_SUBSCRIPTION_ID"
-                    '''
-                }
-            }
+                az account set --subscription "$AZ_SUBSCRIPTION_ID"
+
+                az account show
+            '''
         }
+    }
+}
 
         stage('Provision Infrastructure') {
             steps {
