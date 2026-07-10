@@ -40,7 +40,7 @@ pipeline {
                 '''
             }
         }
-/*
+        
 stage('Azure Login and Provision Infrastructure') {
     steps {
         dir("${TERRAFORM_DIR}") {
@@ -70,7 +70,7 @@ stage('Azure Login and Provision Infrastructure') {
     }
 }
 }
-*/
+
         stage('Deploy Application') {
             steps {
                 dir("${ANSIBLE_DIR}") {
