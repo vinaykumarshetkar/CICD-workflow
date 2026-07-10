@@ -40,7 +40,7 @@ pipeline {
                 '''
             }
         }
-stage('Azure Login') {
+stage('Azure Login and Provision Infrastructure') {
     steps {
         withCredentials([
             azureServicePrincipal(
@@ -60,34 +60,12 @@ stage('Azure Login') {
                 az account set --subscription "$AZ_SUBSCRIPTION_ID"
 
                 az account show
+                terraform init
+                terraform apply -auto-approve
             '''
         }
     }
 }
-
-        stage('Provision Infrastructure') {
-            steps {
-                dir("${TERRAFORM_DIR}") {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'azure-sp',
-                            usernameVariable: 'ARM_CLIENT_ID',
-                            passwordVariable: 'ARM_CLIENT_SECRET'
-                        )
-                    ]) {
-                        sh '''
-                            export ARM_CLIENT_ID=$ARM_CLIENT_ID
-                            export ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET
-                            export ARM_TENANT_ID=$AZ_TENANT_ID
-                            export ARM_SUBSCRIPTION_ID=$AZ_SUBSCRIPTION_ID
-
-                            terraform init
-                            terraform apply -auto-approve
-                        '''
-                    }
-                }
-            }
-        }
 
         stage('Deploy Application') {
             steps {
