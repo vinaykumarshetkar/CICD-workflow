@@ -63,6 +63,8 @@ pipeline {
                     )
                 ]) {
                     sh '''
+                        echo $AZ_TENANT_ID
+                        echo $AZ_SUBSCRIPTION_ID
                         az login --service-principal \
                           -u "$AZ_CLIENT_ID" \
                           -p "$AZ_CLIENT_SECRET" \
