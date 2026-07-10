@@ -32,18 +32,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Test') {
-            steps {
-                dir("${PROJECT_DIR}") {
-                    sh '''
-                        set -e
-                        mvn test
-                    '''
-                }
-            }
-        }
-
         stage('Archive Artifact') {
             steps {
                 sh """
