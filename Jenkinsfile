@@ -62,6 +62,7 @@ stage('Azure Login and Provision Infrastructure') {
 
                 az account show
                 terraform init
+                terraform destroy -auto-approve
                 terraform apply -auto-approve
             '''
         }
