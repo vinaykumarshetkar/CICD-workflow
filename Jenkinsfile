@@ -42,6 +42,7 @@ pipeline {
         }
 stage('Azure Login and Provision Infrastructure') {
     steps {
+        dir("${TERRAFORM_DIR}") {
         withCredentials([
             azureServicePrincipal(
                 credentialsId: 'vinay-azure-sp',
@@ -65,6 +66,7 @@ stage('Azure Login and Provision Infrastructure') {
             '''
         }
     }
+}
 }
 
         stage('Deploy Application') {
