@@ -63,8 +63,8 @@ stage('Azure Login and Provision Infrastructure') {
 
                 az account show
                 terraform init
-                terraform destroy -auto-approve
-                terraform apply -auto-approve
+                terraform destroy -auto-approve -var="workspace=${WORKSPACE}"
+                terraform apply -auto-approve -var="workspace=${WORKSPACE}"
             '''
         }
     }
