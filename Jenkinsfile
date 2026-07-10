@@ -34,11 +34,12 @@ pipeline {
         }
         stage('Archive Artifact') {
             steps {
-                sh """
+                sh '''
+                    set -e
                     cp ${PROJECT_DIR}/target/devops-demo-0.3.0.jar ${BACKUP_DIR}/
                     cd ${BACKUP_DIR}
                     bash backup.sh
-                """
+                '''
             }
         }
         stage('Azure Login') {
